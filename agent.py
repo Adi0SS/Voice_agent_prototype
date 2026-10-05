@@ -1,13 +1,10 @@
 """
-Basic voice agent PoC on LiveKit (livekit-agents 1.8.x).
-
+Basic voice agent 
 Maps to the architecture diagram:
-  client mic --WebRTC--> LiveKit Server --> Agent [VAD/turn -> STT -> LLM(+tools) -> TTS] --> client speaker
+client mic --WebRTC--> LiveKit Server --> Agent [VAD/turn -> STT -> LLM(+tools) -> TTS] --> client speaker
 """
 
 import logging
-
-# import aiohttp
 from dotenv import load_dotenv
 
 from livekit.agents import (
@@ -17,9 +14,7 @@ from livekit.agents import (
     JobContext,
     JobProcess,
     MetricsCollectedEvent,
-    RunContext,
     cli,
-    function_tool,
     inference,
     metrics,
 )
@@ -27,14 +22,6 @@ from livekit.plugins import silero
 
 load_dotenv()  # reads .env in the cwd
 logger = logging.getLogger("voice-agent")
-
-
-# fake "database" -- stands in for the DB / RAG box in the diagram
-ORDERS = {
-    "1001": "shipped, arriving tomorrow",
-    "1002": "processing, should ship in 2 days",
-    "1003": "delivered on Monday",
-}
 
 
 class Assistant(Agent):
@@ -66,18 +53,18 @@ async def entrypoint(ctx: JobContext) -> None:
         llm="openai/gpt-4.1-mini",
         tts="cartesia/sonic-3",
         turn_handling={
-            # semantic turn detector: reads the transcript to decide if you're done
+            # semantic turn detector: reads the transcript to decide if the user is done speaking
             "turn_detection": inference.TurnDetector(),
-            # endpointing delay: wait min_delay if you sound done, up to max_delay if not
+            # endpointing delay
             "endpointing": {"min_delay": 0.4, "max_delay": 3.0},
             # start the LLM on interim transcripts to save time
             "preemptive_generation": {"enabled": True},
-            # barge-in: user can talk over the agent
+            # barge-in or Interrrupt: if the user starts talking while the LLM is generating, stop the LLM and start listening again
             "interruption": {"enabled": True},
         },
     )
 
-    # per-turn latency numbers (EOU delay, LLM TTFT, TTS TTFB) in the logs
+    # (EOU delay, LLM TTFT, TTS TTFB) in the logs
     @session.on("metrics_collected")
     def _on_metrics(ev: MetricsCollectedEvent) -> None:
         metrics.log_metrics(ev.metrics)
