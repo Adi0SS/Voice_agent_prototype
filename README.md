@@ -29,4 +29,4 @@ try: "what's the status of order 1001" or "what's the weather in pune"
 
 ## swapping providers
 
-change the model strings in `AgentSession`, e.g. `llm="google/gemini-2.5-flash"`. or use provider plugins directly (`pip install "livekit-agents[openai]"` and pass `openai.LLM(...)`) if you want your own api keys.
+change the model strings in `AgentSession`, e.g. `llm="google/gemini-2.5-flash"`. or use provider plugins directly (`pip install "livekit-agents[openai]"` and pass `openai.LLM(...)`) if you want your own api key
