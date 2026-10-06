@@ -1,3 +1,4 @@
 livekit-agents[silero]~=1.8
 python-dotenv
 logging
+livekit-plugins-noise-cancellation

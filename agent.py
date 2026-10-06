@@ -5,6 +5,7 @@ client mic --WebRTC--> LiveKit Server --> Agent [VAD/turn -> STT -> LLM(+tools) 
 """
 
 import logging
+
 from dotenv import load_dotenv
 
 from livekit.agents import (
@@ -17,10 +18,16 @@ from livekit.agents import (
     cli,
     inference,
     metrics,
+    room_io,
+    stt,
+    tts,
+    llm
 )
-from livekit.plugins import silero
 
-load_dotenv()  # reads .env in the cwd
+from livekit.plugins import silero, noise_cancellation
+
+
+load_dotenv() 
 logger = logging.getLogger("voice-agent")
 
 
@@ -49,9 +56,24 @@ server = AgentServer(setup_fnc=prewarm)
 async def entrypoint(ctx: JobContext) -> None:
     session = AgentSession(
         vad=ctx.proc.userdata["vad"],
-        stt="deepgram/nova-3",
-        llm="openai/gpt-4.1-mini",
-        tts="cartesia/sonic-3",
+        stt=stt.FallbackAdapter(
+            [
+                inference.STT.from_model_string("deepgram/nova-3"),
+                inference.STT.from_model_string("assemblyai/universal-3-5-pro"),
+            ],
+        ),
+        llm= llm.FallbackAdapter(
+            [
+                inference.LLM.from_model_string("openai/gpt-4.1-mini"),
+                inference.LLM.from_model_string("google/gemini-pro-3.5"),
+            ],
+        ),
+        tts=tts.FallbackAdapter(
+            [
+                inference.TTS.from_model_string("xai/tts-1:ursa"),
+                inference.TTS.from_model_string("coqui/tts-1:alloy"),
+            ],
+        ),
         turn_handling={
             # semantic turn detector: reads the transcript to decide if the user is done speaking
             "turn_detection": inference.TurnDetector(),
@@ -69,8 +91,16 @@ async def entrypoint(ctx: JobContext) -> None:
     def _on_metrics(ev: MetricsCollectedEvent) -> None:
         metrics.log_metrics(ev.metrics)
 
-    await session.start(agent=Assistant(), room=ctx.room)
-    await session.generate_reply(instructions="Greet the user briefly and ask how you can help.")
+    await session.start(agent=Assistant(),
+                         room=ctx.room,
+                         room_options=room_io.RoomOptions(
+                             audio_input = room_io.AudioInputOptions(
+                                 noise_cancellation = noise_cancellation.BVC()
+                             ),
+                         ),
+    )
+    await session.generate_reply(instructions="You are a friendly, sarcastic voice assistant for conversations as a friend." \
+    " Keep replies under 3 sentences, this is a voice call. No markdown, no lists, no emojis.")
 
 
 if __name__ == "__main__":
