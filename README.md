@@ -25,8 +25,6 @@ try: "what's the status of order 1001" or "what's the weather in pune"
 
 - `prewarm()` loads silero VAD once per process
 - `turn_handling` - semantic turn detector, endpointing min/max delay, preemptive generation, interruptions
-- `get_order_status` - fake db lookup
-- `get_weather` - real REST call (open-meteo)
 - `metrics_collected` handler logs per-turn latency (eou delay, llm ttft, tts ttfb). watch these
 
 ## swapping providers
