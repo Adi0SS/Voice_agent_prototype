@@ -60,7 +60,7 @@ class Assistant(Agent):
                 role="system",
                 content=(
                     f"Low speech-recognition confidence ({conf:.2f}) on the last user message. "
-                    "Don't act on it yet. Briefly confirm what you heard ('Did you mean ...?'). "
+                    "Don't act on it yet. Briefly confirm what you heard by repeating it a part of it ('Is that correct...?'). "
                     "If they say no, ask them to repeat."
                 ),
             )
