@@ -1,9 +1,3 @@
-"""
-Basic voice agent 
-Maps to the architecture diagram:
-client mic --WebRTC--> LiveKit Server --> Agent [VAD/turn -> STT -> LLM(+tools) -> TTS] --> client speaker
-"""
-
 import logging
 from typing import AsyncIterable
 from dotenv import load_dotenv
